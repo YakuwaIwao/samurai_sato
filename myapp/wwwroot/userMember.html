@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  <title>xxx</title>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+  <!-- jQuery UI -->
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+  <script src="scripts/userMember.js?dummy=xxx"></script>
+
+  <style>
+    .user-tr {
+      clear: both;
+    }
+
+    .user-input,
+    .user-message {
+      float: left;
+    }
+
+    .selected {
+      background-color: blue;
+      color: white;
+    }
+
+    ul.nav {
+      list-style: none;
+      display: table;
+      margin: 0;
+      padding: 0;
+    }
+
+    ul.nav>li {
+      display: table-cell;
+      border: solid 1px;
+    }
+
+    /* ul.nav > li:nth-child(1){
+	    width: 50px;
+    } */
+    ul.nav>li:nth-child(1) {
+      width: 50px;
+    }
+
+    ul.nav>li:nth-child(2) {
+      width: 150px;
+    }
+
+    ul.nav>li:nth-child(3) {
+      width: 150px;
+    }
+
+    /* ul.nav > input:nth-child(1){
+        width: 50px;
+    } */
+  </style>
+
+</head>
+
+<body>
+
+  <h3><strong>:::会員登録::::</strong></h3>
+
+  <div id="dialog" style="display:none;">
+
+    <div id="input">
+      <div class="user-tr">
+        <div class="user-exp"><label>アカウントID</label></div>
+        <div class="user-input">
+          <input type="text" class="user" id="userId">
+        </div>
+        <div class="user-message user-userId">
+          <label></label>
+        </div>
+      </div>
+
+      <div class="user-tr">
+        <div class='user-exp'><label>パスワード</label></div>
+        <div class='user-input'>
+          <input type="text" class="user" id="password">
+        </div>
+        <div class='user-message user-password'>
+          <label></label>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirm">
+      <div>確認画面</div>
+      <div>アカウントID</div>
+
+      <div id="confirm-user-id">
+        <label></label>
+      </div>
+      <div>アカウントPW</div>
+      <div id="confirm-user-pw">
+        <label></label>
+      </div>
+    </div>
+
+    <div id="finish">
+      <div>完了画面</div>
+      <div id="finshdayo">
+        <!-- 追加　-->
+      </div>
+      <!-- <div style="float: left;">
+        <input type="button" class="user" id="return" value="TOPに戻る">
+      </div> -->
+    </div>
+
+  </div>
+
+  <div class='user-tr'>
+    <div></div>
+    <div style="float: left;">
+      <input type="button" class="user" id="add" value="追加">
+    </div>
+    <div style="float: left;">
+      <input type="button" class="user" id="update" value="修正">
+    </div>
+    <div style="float: left;">
+      <input type="button" class="user" id="delete" value="削除">
+    </div>
+  </div>
+
+  <div style="clear:both;"></div>
+
+  <div id="register">
+  </div>
+
+  <script>
+    "use strict";
+
+    $(function () {
+      let userList = getStorageData();
+      refleshRegistList();
+
+      // イベント関連
+      // 追加ボタンクリック
+      $('#add').on('click', function () {
+
+        // アカウントIDの入力テキストを活性にする。
+        $('#userId').prop('disabled', false);
+
+        $('#userId').val('');
+        $('#password').val('');
+        $('.user-message.user-userId label').text('');
+        $('.user-message.user-password label').text('');
+
+        $('#input').show();
+        $('#confirm').hide();
+        $('#finish').hide();
+
+        $('#dialog').dialog({
+          modal: true, //モーダル表示
+          title: "追加", //タイトル
+          width: 550,
+          buttons: { //ボタン
+            "OK": function () {
+              if ($('#input').is(':visible') == true) {
+                addFunc();
+              } else if ($('#confirm').is(':visible') == true) {
+                confirmFunc();
+              } else if ($('#finish').is(':visible') == true) {
+                finishFunc();
+                $(this).dialog("close");
+              }
+            },
+            "キャンセル": function () {
+              $(this).dialog("close");
+            },
+          }
+        });
+
+      });
+
+      // 更新ボタンクリック
+      $('#update').on('click', function () {
+        console.log('update click!');
+
+        // ★変数宣言
+        let userList = getStorageData();
+        // ★userList渡す
+        let updateIndex = updatechecked(userList);
+        
+        $('#dialog').dialog({
+          modal: true, //モーダル表示
+          title: '修正', //タイトル
+          width: 550,
+          buttons: { //ボタン
+            "OK": function () {
+              if ($('#input').is(':visible') == true) {
+                $('#confirm-user-id label').text($('#userId').val());
+                $('#confirm-user-pw label').text($('#password').val());
+
+                // OKボタンを表示する
+
+                $('#input').hide();
+                $('#confirm').show();
+                $('#finish').hide();
+
+              } else if ($('#confirm').is(':visible') == true) {
+        
+                // 配列に追加             
+                // ★userList渡す
+                updateadd(userList, updateIndex);
+
+              } else if ($('#finish').is(':visible') == true) {
+                $('#input').show();
+                $('#confirm').hide();
+                $('#finish').hide();
+
+                refleshRegistList();
+
+                $(this).dialog("close");
+
+              }
+            },
+            "キャンセル": function () {
+              $(this).dialog("close");
+            },
+          }
+        });
+
+
+      });
+
+      // 削除ボタンクリック
+      $('#delete').on('click', function () {
+        console.log('delete click!');
+
+        // 登録されているデータを削除する
+        if (confirm('削除しますか？')) {
+
+          var deletcheck = $(':checkbox:checked').val();
+          console.log(deletcheck);
+
+          //---------------------------------------------
+          // ストレージに入力データを保存する
+          // ストレージ読み込み
+          // let userList = sessionStorage.getItem('userList');
+          // if (userList == null) {
+          //   // 配列初期化
+          //   userList = [];
+          // } else {
+          //   // データが存在すれば、文字列からオブジェクトに変換
+          //   userList = JSON.parse(userList);
+          // }
+          // console.log(userList);
+
+          let userList = getStorageData();
+
+          $('#register :checkbox:checked').each(function () {
+            let checkedVal = $(this).val();
+            // ストレージから削除する位置を取得
+            let delIndex = -1;
+            $.each(userList, function (index) {
+              let user = this;
+              if (user.userId == checkedVal) {
+                delIndex = index;
+                return false;
+              }
+            });
+            // ストレージから削除
+            // 配列に選択したデータを削除
+            if (delIndex >= 0) {
+              userList.splice(delIndex, 1); // 2番目削除第二引数は１のまま。
+            }
+          });
+
+          // オブジェクトを文字列にして保存
+          sessionStorage.setItem('userList', JSON.stringify(userList));
+
+          // 一覧を再表示
+          refleshRegistList();
+          //---------------------------------------------
+
+        }
+
+      });
+
+    });
+
+
+  </script>
+
+</body>
+
+</html>
